@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sổ Thu Hộ</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d91c1c">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: ấm, rõ, như cuốn sổ thu tiền của bà — không chi tiết thừa
+   IDEA: cuốn sổ tay ghi tên từng người, mỗi dòng một thẻ màu
+   PICTURE: danh sách thẻ to, nút + đỏ tròn lớn bên phải
+   COLOUR and TYPE: xanh lá = chưa thu, trắng = đã thu, xanh dương = trễ 2 tuần, đỏ = nút thu; Be Vietnam Pro cỡ lớn
+   LAYOUT: một cột, tóm tắt trên cùng, danh sách, nút thêm người, sao lưu cuối trang */
+:root{color-scheme:light;--bg:#f4efe6;--ink:#1b1b1b;--muted:#4d4d4d;--red:#d91c1c;--green:#c8f1c4;--greenB:#2c9a39;--blue:#c5dbff;--blueB:#1f5fd6;--line:#cfc7b8}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 21px/1.4 "Be Vietnam Pro",system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:720px;margin:0 auto;padding:16px 14px 80px}
+h1{font-size:34px;line-height:1.1;margin:4px 0 12px;font-weight:800}
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.sum div{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.sum b{display:block;font-size:30px;line-height:1.1;font-weight:800}
+.sum span{font-size:17px;color:var(--muted)}
+.sum .money{grid-column:1/-1;font-size:20px}
+.sum .money b{font-size:28px;display:inline}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:17px;margin:0 0 12px}
+.legend i{display:inline-block;width:22px;height:22px;border-radius:6px;vertical-align:-4px;margin-right:6px;border:2px solid}
+input,select,textarea{font:inherit;font-size:22px;width:100%;padding:12px 14px;border:2px solid #9b9384;border-radius:12px;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,button:focus-visible{outline:4px solid #f0b400;outline-offset:2px}
+.search{margin-bottom:12px}
+.list{display:grid;gap:12px}
+.card{display:flex;align-items:center;gap:12px;border:3px solid var(--line);border-radius:18px;padding:14px;background:#fff;box-shadow:0 2px 0 rgba(0,0,0,.08)}
+.card.g{background:var(--green);border-color:var(--greenB)}
+.card.b{background:var(--blue);border-color:var(--blueB)}
+.card.d{background:#e6e6e6;border-color:#bbb;opacity:.85}
+.info{flex:1;cursor:pointer}
+.name{font-size:27px;font-weight:800;line-height:1.15;overflow-wrap:anywhere}
+.meta{font-size:19px;color:var(--muted);margin-top:4px}
+.st{display:inline-block;margin-top:6px;font-size:19px;font-weight:700;padding:2px 10px;border-radius:8px;background:rgba(255,255,255,.7)}
+.card.b .st{background:var(--blueB);color:#fff}
+.plus{flex:none;width:78px;height:78px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:56px;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 4px 0 #8f0f0f}
+.plus:active{transform:translateY(3px);box-shadow:0 1px 0 #8f0f0f}
+.plus[disabled]{background:#aaa;box-shadow:none}
+.btn{font:inherit;font-weight:700;font-size:22px;min-height:60px;padding:10px 18px;border-radius:14px;border:2px solid #5b5446;background:#fff;color:var(--ink);cursor:pointer;width:100%}
+.btn.main{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.ok{background:var(--greenB);color:#fff;border-color:var(--greenB)}
+.btn.warn{background:var(--red);color:#fff;border-color:var(--red)}
+.add{margin:18px 0}
+.empty{background:#fff;border:3px dashed var(--line);border-radius:18px;padding:24px;text-align:center}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:9}
+.mask.on{display:flex}
+.box{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px 26px}
+@media(min-width:640px){.mask{align-items:center}.box{border-radius:22px}}
+.box h2{font-size:28px;margin:0 0 10px;line-height:1.15}
+.box p{margin:8px 0}
+.big{font-size:30px;font-weight:800}
+label{display:block;font-weight:700;margin:14px 0 6px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:16px}
+.hint{font-size:17px;color:var(--muted)}
+.hist{list-style:none;padding:0;margin:8px 0;max-height:260px;overflow:auto;border:2px solid var(--line);border-radius:12px}
+.hist li{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid #eee;font-size:19px}
+.hist li:last-child{border:0}
+.stack{display:grid;gap:10px;margin-top:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:6px;margin-top:6px}
+.wk{font:inherit;min-height:58px;border:2px solid #9b9384;border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;line-height:1.1;padding:4px 0}
+.wk b{display:block;font-size:20px}.wk small{font-size:14px}
+.wk.on{background:var(--greenB);border-color:var(--greenB);color:#fff}
+.wk.now{outline:3px solid var(--red);outline-offset:1px}
+.backup{margin-top:30px;background:#fff;border:2px solid var(--line);border-radius:16px;padding:14px}
+.backup summary{font-weight:700;cursor:pointer;min-height:44px}
+.sync{font-size:16px;color:var(--muted);text-align:center;margin-top:16px}
+.note{background:#fff4c2;border:2px solid #e0b400;border-radius:12px;padding:10px 12px;font-size:19px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sổ thu tiền Quỹ Tín Dụng</h1>
+  <div class="sum" id="sum"></div>
+  <div class="legend">
+    <span><i style="background:var(--green);border-color:var(--greenB)"></i>Chưa thu tuần này</span>
+    <span><i style="background:#fff;border-color:#999"></i>Đã thu</span>
+    <span><i style="background:var(--blue);border-color:var(--blueB)"></i>Trễ 2 tuần trở lên</span>
+  </div>
+  <input class="search" id="q" type="search" placeholder="Tìm tên..." aria-label="Tìm tên">
+  <div class="list" id="list"></div>
+  <button class="btn main add" id="addBtn">+ Thêm người vay mới</button>
+  <details class="backup">
+    <summary>Sao lưu dữ liệu</summary>
+    <p class="hint">Bấm "Chép dữ liệu" rồi dán vào Zalo hoặc ghi chú để cất giữ. Khi cần, dán lại vào ô dưới và bấm "Khôi phục".</p>
+    <button class="btn" id="copyBtn">Chép dữ liệu</button>
+    <textarea id="restoreTxt" rows="3" style="margin-top:10px" placeholder="Dán dữ liệu sao lưu vào đây"></textarea>
+    <button class="btn" id="restoreBtn" style="margin-top:10px">Khôi phục</button>
+  </details>
+  <div class="sync" id="sync">Đang mở sổ...</div>
+</div>
+
+<div class="mask" id="mask"><div class="box" id="box" role="dialog" aria-modal="true"></div></div>
+
+<script>
+{
+const LS='sothuho_v1';
+let state={people:[]};
+let ref=null, writeQ=Promise.resolve(), firstSnap=true;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=k=>{const a=String(k).split('-').map(Number);return new Date(a[0],a[1]-1,a[2])};
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const firstSat=k=>{const d=parse(k);return addDays(d,(6-d.getDay()+7)%7)};
+const lastSat=()=>{const t=today();return addDays(t,-((t.getDay()+1)%7))};
+const nextSat=()=>{const t=today();return addDays(t,(6-t.getDay()+7)%7)};
+const dmy=d=>pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+const money=n=>Number(n||0).toLocaleString('vi-VN')+' đ';
+const digits=s=>Number(String(s).replace(/\D/g,''))||0;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function due(p){const fs=firstSat(p.start),t=today();if(t<fs)return 0;return Math.min(p.weeks,Math.floor(Math.round((t-fs)/864e5)/7)+1)}
+function status(p){
+  const paid=p.paid.length;
+  if(paid>=p.weeks)return{c:'d',t:'Đã thu xong '+p.weeks+' tuần',o:4};
+  const late=due(p)-paid;
+  if(late>=2)return{c:'b',t:'Trễ '+late+' tuần — '+money(late*p.amount),o:0};
+  if(late===1)return{c:'g',t:'Chưa thu tuần này',o:1};
+  if(due(p)===0)return{c:'w',t:'Bắt đầu thu ngày '+dmy(firstSat(p.start)),o:3};
+  return{c:'w',t:'Đã thu tuần này',o:2};
+}
+
+function save(){
+  state.updated=Date.now();
+  try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}
+  if(ref){const copy=JSON.parse(JSON.stringify(state));writeQ=writeQ.then(()=>ref.set(copy)).then(()=>setSync(true)).catch(()=>setSync(false))}
+  render();
+}
+function setSync(ok){$('sync').textContent=ref?(ok?'Đã lưu lên mạng — mở ở máy khác vẫn thấy':'Chưa lưu lên mạng được, đã lưu tạm trên máy này'):'Đang lưu trên máy này'}
+
+function render(){
+  const q=$('q').value.trim().toLowerCase();
+  const ws=key(lastSat());
+  let cnt=0,sum=0,todo=0,late=0;
+  state.people.forEach(p=>{
+    p.paid.forEach(x=>{if(x.d>=ws){cnt++;sum+=p.amount}});
+    const s=status(p);if(s.c==='g')todo++;if(s.c==='b'){todo++;late++}
+  });
+  $('sum').innerHTML=`<div><b>${cnt}</b><span>lần đã thu tuần này</span></div><div><b>${todo}</b><span>người chưa thu</span></div><div><b>${late}</b><span>người trễ 2 tuần</span></div><div class="money">Tiền thu tuần này: <b>${money(sum)}</b></div>`;
+  const ps=state.people.filter(p=>!q||p.name.toLowerCase().includes(q)).map(p=>({p,s:status(p)})).sort((a,b)=>a.s.o-b.s.o||a.p.name.localeCompare(b.p.name,'vi'));
+  if(!state.people.length){$('list').innerHTML='<div class="empty">Sổ chưa có ai.<br>Bấm nút <b>"Thêm người vay mới"</b> bên dưới để bắt đầu.</div>';return}
+  $('list').innerHTML=ps.map(({p,s})=>`<div class="card ${s.c}"><div class="info" data-open="${esc(p.id)}"><div class="name">${esc(p.name)}</div><div class="meta">${money(p.amount)}/tuần · đã thu ${p.paid.length}/${p.weeks} tuần</div><span class="st">${esc(s.t)}</span></div><button class="plus" data-pay="${esc(p.id)}" aria-label="Thu tiền ${esc(p.name)}" ${s.c==='d'?'disabled':''}>+</button></div>`).join('')||'<div class="empty">Không tìm thấy tên này.</div>';
+}
+
+/* ---- hộp thoại ---- */
+let closeCb=null;
+function open(html,cb){$('box').innerHTML=html;$('mask').classList.add('on');closeCb=cb||null}
+function close(){$('mask').classList.remove('on');$('box').innerHTML='';closeCb=null}
+function ask(title,body,okText,okCls){
+  return new Promise(res=>{
+    open(`<h2>${title}</h2>${body}<div class="row"><button class="btn" data-a="no">KHÔNG</button><button class="btn ${okCls||'ok'}" data-a="yes">${okText}</button></div>`);
+    $('box').onclick=e=>{const a=e.target.closest('[data-a]');if(!a)return;$('box').onclick=null;close();res(a.dataset.a==='yes')};
+  });
+}
+$('mask').addEventListener('click',e=>{if(e.target===$('mask')){$('box').onclick=null;close()}});
+const find=id=>state.people.find(p=>p.id===id);
+
+async function pay(id){
+  const p=find(id);if(!p)return;
+  const k=p.paid.length+1, d=addDays(firstSat(p.start),7*(k-1));
+  const ahead=due(p)-p.paid.length<=0;
+  const ok=await ask('Thu tiền?',`<p class="big">${esc(p.name)}</p><p>Tuần thứ <b>${k}/${p.weeks}</b> (thứ 7 ngày ${dmy(d)})</p><p class="big" style="color:var(--red)">${money(p.amount)}</p>${ahead?'<p class="note">Người này đã thu đủ tới tuần này rồi. Bấm ĐÚNG nếu họ đóng trước cho tuần sau.</p>':''}`,'ĐÚNG, ĐÃ THU');
+  if(!ok)return;
+  const n=new Date();p.paid.push({d:key(n),t:pad(n.getHours())+':'+pad(n.getMinutes())});save();
+}
+
+function detail(id){
+  const p=find(id);if(!p)return;
+  const fs=firstSat(p.start);
+  const when=x=>x.d?'thu ngày '+dmy(parse(x.d))+' '+esc(x.t||''):'thu trước khi dùng sổ';
+  const hist=p.paid.map((x,i)=>`<li><span>Tuần ${i+1}</span><span>${when(x)}</span></li>`).reverse().join('')||'<li>Chưa thu lần nào</li>';
+  const past=(p.past||[]).map(x=>`<li><span>Kỳ trước</span><span>${money(x.amount)} × ${x.paid}/${x.weeks} tuần</span></li>`).join('');
+  open(`<h2>${esc(p.name)}</h2>
+  <p>Mỗi tuần: <b>${money(p.amount)}</b><br>Bắt đầu: thứ 7 ${dmy(fs)} · ${p.weeks} tuần<br>Đã thu: <b>${p.paid.length}/${p.weeks}</b> tuần = ${money(p.paid.length*p.amount)}<br>Còn lại: ${money(Math.max(0,p.weeks-p.paid.length)*p.amount)}</p>
+  ${p.phone?`<p>Điện thoại: <b>${esc(p.phone)}</b></p>`:''}
+  <div class="stack">
+    <button class="btn ok" data-x="edit">Sửa thông tin và các tuần đã thu</button>
+    <button class="btn" data-x="undo" ${p.paid.length?'':'disabled'}>Bỏ lần thu cuối (bấm nhầm)</button>
+  </div>
+  <label>Lịch sử thu</label><ul class="hist">${hist}${past}</ul>
+  <div class="stack">
+    <button class="btn" data-x="newloan">Bắt đầu kỳ vay mới</button>
+    <button class="btn warn" data-x="del">Xoá người này</button>
+    <button class="btn main" data-x="close">Đóng</button>
+  </div>`);
+  $('box').onclick=async e=>{
+    const b=e.target.closest('[data-x]');if(!b)return;const x=b.dataset.x;
+    if(x==='close'){$('box').onclick=null;close();return}
+    $('box').onclick=null;
+    if(x==='edit'){edit(id);return}
+    if(x==='undo'){const l=p.paid[p.paid.length-1];if(await ask('Bỏ lần thu cuối?',`<p>${esc(p.name)} — tuần ${p.paid.length}, ${when(l)}</p><p>Dùng khi bà lỡ bấm nhầm.</p>`,'ĐÚNG, BỎ','warn')){p.paid.pop();save()}}
+    if(x==='del'){if(await ask('Xoá hẳn người này?',`<p class="big">${esc(p.name)}</p><p>Mất hết lịch sử thu. Không lấy lại được.</p>`,'XOÁ','warn')){state.people=state.people.filter(y=>y.id!==id);save();return}}
+    if(x==='newloan'){form(p);return}
+    detail(id);
+  };
+}
+
+function edit(id){
+  const p=find(id);if(!p)return;
+  let n=p.paid.length;
+  open(`<h2>Sửa: ${esc(p.name)}</h2>
+  <label for="eName">Họ tên</label><input id="eName" value="${esc(p.name)}">
+  <label for="ePhone">Số điện thoại</label><input id="ePhone" inputmode="tel" value="${esc(p.phone||'')}">
+  <label for="eAmt">Số tiền mỗi tuần</label><input id="eAmt" inputmode="numeric" value="${Number(p.amount).toLocaleString('vi-VN')}">
+  <label for="eStart">Thứ 7 thu đầu tiên</label><input id="eStart" type="date" value="${esc(p.start)}">
+  <label for="eWeeks">Số tuần của kỳ vay</label><input id="eWeeks" inputmode="numeric" value="${p.weeks}">
+  <label>Số tuần đã thu</label>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="btn" data-e="minus" style="width:72px;font-size:34px">−</button>
+    <div id="eN" class="big" style="flex:1;text-align:center"></div>
+    <button class="btn" data-e="plus" style="width:72px;font-size:34px">+</button>
+  </div>
+  <p class="hint" id="eDue"></p>
+  <button class="btn" data-e="setdue" id="eSetDue">Đã thu đủ tới tuần này</button>
+  <p class="hint">Hoặc bấm vào ô tuần cuối cùng đã thu:</p>
+  <div class="grid" id="eGrid"></div>
+  <div class="row"><button class="btn" data-e="cancel">Huỷ</button><button class="btn ok" data-e="save">Lưu</button></div>`);
+  const draft=()=>({start:$('eStart').value||p.start,weeks:Math.max(1,digits($('eWeeks').value)||p.weeks)});
+  const draw=()=>{
+    const d=draft();if(n>d.weeks)n=d.weeks;
+    const dd=due({start:d.start,weeks:d.weeks}), f=firstSat(d.start);
+    $('eN').textContent=n+' / '+d.weeks+' tuần';
+    $('eDue').textContent=dd?'Theo lịch, tới hôm nay phải thu '+dd+' tuần (thu từ thứ 7 '+dmy(f)+').':'Chưa tới ngày thu đầu tiên (thứ 7 '+dmy(f)+').';
+    $('eSetDue').textContent='Đã thu đủ tới tuần này ('+dd+' tuần)';
+    let g='';for(let i=1;i<=d.weeks;i++){const dt=addDays(f,7*(i-1));g+=`<button class="wk${i<=n?' on':''}${i===dd?' now':''}" data-w="${i}"><b>${i}</b><small>${pad(dt.getDate())}/${pad(dt.getMonth()+1)}</small></button>`}
+    $('eGrid').innerHTML=g;
+  };
+  draw();
+  $('eWeeks').addEventListener('input',draw);$('eStart').addEventListener('change',draw);
+  $('eAmt').addEventListener('input',e=>{const v=digits(e.target.value);e.target.value=v?v.toLocaleString('vi-VN'):''});
+  $('box').onclick=async e=>{
+    const w=e.target.closest('[data-w]');
+    if(w){const i=+w.dataset.w;n=(i===n)?i-1:i;draw();return}
+    const b=e.target.closest('[data-e]');if(!b)return;const x=b.dataset.e;
+    if(x==='minus'){n=Math.max(0,n-1);draw();return}
+    if(x==='plus'){n=Math.min(draft().weeks,n+1);draw();return}
+    if(x==='setdue'){const d=draft();n=due({start:d.start,weeks:d.weeks});draw();return}
+    if(x==='cancel'){$('box').onclick=null;detail(id);return}
+    const name=$('eName').value.trim(),amt=digits($('eAmt').value),d=draft();
+    if(!name||!amt){alertBox('Họ tên và số tiền không được để trống.',id);return}
+    const fs=firstSat(d.start);
+    $('box').onclick=null;
+    const ok=await ask('Lưu thay đổi?',`<p class="big">${esc(name)}</p><p>Mỗi tuần <b>${money(amt)}</b><br>Thu từ thứ 7 <b>${dmy(fs)}</b> · ${d.weeks} tuần<br>Đã thu: <b>${n}</b> tuần</p>${amt!==p.amount?'<p class="note">Số tiền mỗi tuần sẽ đổi từ '+money(p.amount)+' thành '+money(amt)+'.</p>':''}`,'ĐÚNG, LƯU');
+    if(!ok){edit(id);return}
+    p.name=name;p.phone=$('ePhone').value.trim();p.amount=amt;p.start=key(fs);p.weeks=d.weeks;
+    while(p.paid.length<n)p.paid.unshift({d:'',t:'',old:true});
+    while(p.paid.length>n)p.paid.pop();
+    save();detail(id);
+  };
+}
+function alertBox(msg,id){ask('Chưa lưu được',`<p>${esc(msg)}</p>`,'SỬA LẠI').then(()=>edit(id))}
+
+function form(old){
+  const ns=key(nextSat());
+  open(`<h2>${old?'Kỳ vay mới cho '+esc(old.name):'Thêm người vay mới'}</h2>
+  ${old?'':'<label for="fName">Họ tên</label><input id="fName" autocomplete="off">'}
+  ${old?'':'<label for="fPhone">Số điện thoại (không bắt buộc)</label><input id="fPhone" inputmode="tel">'}
+  <label for="fAmt">Số tiền thu mỗi tuần</label><input id="fAmt" inputmode="numeric" placeholder="Ví dụ 200.000">
+  <p class="hint">Số tiền này cố định suốt kỳ vay, nhập xong không sửa được.</p>
+  <label for="fStart">Thứ 7 thu đầu tiên</label><input id="fStart" type="date" value="${ns}">
+  <label for="fWeeks">Số tuần</label><input id="fWeeks" inputmode="numeric" value="40">
+  <p class="note" id="fErr" style="display:none"></p>
+  <div class="row"><button class="btn" data-f="no">Huỷ</button><button class="btn ok" data-f="ok">Lưu</button></div>`);
+  $('fAmt').addEventListener('input',e=>{const n=digits(e.target.value);e.target.value=n?n.toLocaleString('vi-VN'):''});
+  $('box').onclick=async e=>{
+    const b=e.target.closest('[data-f]');if(!b)return;
+    if(b.dataset.f==='no'){$('box').onclick=null;close();return}
+    const name=old?old.name:$('fName').value.trim(), amt=digits($('fAmt').value), st=$('fStart').value, wk=digits($('fWeeks').value);
+    const err=!name?'Chưa nhập họ tên.':!amt?'Chưa nhập số tiền.':!st?'Chưa chọn ngày bắt đầu.':!wk?'Chưa nhập số tuần.':'';
+    if(err){$('fErr').textContent=err;$('fErr').style.display='block';return}
+    const phone=old?old.phone:$('fPhone').value.trim();
+    $('box').onclick=null;
+    const fs=firstSat(st);
+    const ok=await ask('Kiểm tra lại',`<p class="big">${esc(name)}</p><p>Mỗi tuần <b>${money(amt)}</b> × ${wk} tuần<br>Tổng: ${money(amt*wk)}<br>Thu từ thứ 7 ngày <b>${dmy(fs)}</b></p>${parse(st).getDay()!==6?'<p class="note">Ngày đã chọn không phải thứ 7, sổ sẽ tính từ thứ 7 kế tiếp.</p>':''}`,'ĐÚNG, LƯU');
+    if(!ok){return}
+    if(old){(old.past=old.past||[]).push({amount:old.amount,weeks:old.weeks,paid:old.paid.length,start:old.start});Object.assign(old,{amount:amt,start:key(fs),weeks:wk,paid:[]})}
+    else state.people.push({id:uid(),name,phone,amount:amt,start:key(fs),weeks:wk,paid:[]});
+    save();
+  };
+}
+
+$('list').addEventListener('click',e=>{
+  const p=e.target.closest('[data-pay]');if(p){pay(p.dataset.pay);return}
+  const o=e.target.closest('[data-open]');if(o)detail(o.dataset.open);
+});
+$('addBtn').addEventListener('click',()=>form(null));
+$('q').addEventListener('input',render);
+$('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(JSON.stringify(state));$('copyBtn').textContent='Đã chép ✓'}catch(e){$('restoreTxt').value=JSON.stringify(state);$('copyBtn').textContent='Không chép được — dữ liệu đã hiện ở ô dưới, hãy tự chép'}});
+$('restoreBtn').addEventListener('click',async()=>{
+  let d;try{d=JSON.parse($('restoreTxt').value);if(!Array.isArray(d.people))throw 0}catch(e){$('restoreTxt').value='';$('restoreTxt').placeholder='Dữ liệu dán vào không đúng';return}
+  if(await ask('Khôi phục?',`<p>Sổ hiện tại sẽ được thay bằng bản sao lưu có <b>${d.people.length}</b> người.</p>`,'ĐÚNG, KHÔI PHỤC','warn')){state={people:d.people};save()}
+});
+setInterval(render,60000);
+if('serviceWorker' in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+
+/* ---- tải dữ liệu ---- */
+try{const s=JSON.parse(localStorage.getItem(LS)||'null');if(s&&Array.isArray(s.people))state=s}catch(e){}
+render();setSync(true);
+const clean=d=>d&&Array.isArray(d.people)?{people:d.people.map(p=>({...p,paid:Array.isArray(p.paid)?p.paid:[]})),updated:d.updated}:null;
+(async()=>{
+  let db=null;try{db=await window.claude?.use?.('db')}catch(e){}
+  if(!db){setSync(true);return}
+  try{ref=db.doc('so/chinh')}catch(e){ref=null;return}
+  const timer=setTimeout(()=>{$('sync').textContent='Mạng chậm — đang dùng dữ liệu trên máy này'},10000);
+  ref.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache)clearTimeout(timer);
+    if(snap.metadata.hasPendingWrites)return;
+    const d=snap.exists?clean(snap.data()):null;
+    if(d){state=d;try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}render();setSync(true)}
+    else if(firstSnap&&!snap.metadata.fromCache&&state.people.length){save()}
+    else setSync(true);
+    if(!snap.metadata.fromCache)firstSnap=false;
+  },()=>{clearTimeout(timer);ref=null;setSync(true)});
+})();
+}
+</script>
+</body>
+</html>
