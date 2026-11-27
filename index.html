@@ -248,13 +248,13 @@ function edit(id){
     if(x==='plus'){n=Math.min(draft().weeks,n+1);draw();return}
     if(x==='setdue'){const d=draft();n=due({start:d.start,weeks:d.weeks});draw();return}
     if(x==='cancel'){$('box').onclick=null;detail(id);return}
-    const name=$('eName').value.trim(),amt=digits($('eAmt').value),d=draft();
+    const name=$('eName').value.trim(),phone=$('ePhone').value.trim(),amt=digits($('eAmt').value),d=draft();
     if(!name||!amt){alertBox('Họ tên và số tiền không được để trống.',id);return}
     const fs=firstSat(d.start);
     $('box').onclick=null;
     const ok=await ask('Lưu thay đổi?',`<p class="big">${esc(name)}</p><p>Mỗi tuần <b>${money(amt)}</b><br>Thu từ thứ 7 <b>${dmy(fs)}</b> · ${d.weeks} tuần<br>Đã thu: <b>${n}</b> tuần</p>${amt!==p.amount?'<p class="note">Số tiền mỗi tuần sẽ đổi từ '+money(p.amount)+' thành '+money(amt)+'.</p>':''}`,'ĐÚNG, LƯU');
     if(!ok){edit(id);return}
-    p.name=name;p.phone=$('ePhone').value.trim();p.amount=amt;p.start=key(fs);p.weeks=d.weeks;
+    p.name=name;p.phone=phone;p.amount=amt;p.start=key(fs);p.weeks=d.weeks;
     while(p.paid.length<n)p.paid.unshift({d:'',t:'',old:true});
     while(p.paid.length>n)p.paid.pop();
     save();detail(id);
