@@ -93,7 +93,7 @@ label{display:block;font-weight:700;margin:14px 0 6px}
     <p class="hint">Bấm "Chép dữ liệu" rồi dán vào Zalo hoặc ghi chú để cất giữ. Khi cần, dán lại vào ô dưới và bấm "Khôi phục".</p>
     <button class="btn" id="shareBtn" style="margin-bottom:10px">Tạo link gửi sổ sang máy khác</button>
     <button class="btn" id="copyBtn">Chép dữ liệu</button>
-    <textarea id="restoreTxt" rows="3" style="margin-top:10px" placeholder="Dán dữ liệu sao lưu vào đây"></textarea>
+    <textarea id="restoreTxt" rows="3" style="margin-top:10px" placeholder="Dán link sổ hoặc dữ liệu sao lưu vào đây"></textarea>
     <button class="btn" id="restoreBtn" style="margin-top:10px">Khôi phục</button>
   </details>
   <div class="sync" id="sync">Đang mở sổ...</div>
@@ -150,7 +150,7 @@ function render(){
   });
   $('sum').innerHTML=`<div><b>${cnt}</b><span>lần đã thu tuần này</span></div><div><b>${todo}</b><span>người chưa thu</span></div><div><b>${late}</b><span>người trễ 2 tuần</span></div><div class="money">Tiền thu tuần này: <b>${money(sum)}</b></div>`;
   const ps=state.people.filter(p=>!q||p.name.toLowerCase().includes(q)).map(p=>({p,s:status(p)})).sort((a,b)=>a.s.o-b.s.o||a.p.name.localeCompare(b.p.name,'vi'));
-  if(!state.people.length){$('list').innerHTML='<div class="empty">Sổ chưa có ai.<br>Bấm nút <b>"Thêm người vay mới"</b> bên dưới để bắt đầu.</div>';return}
+  if(!state.people.length){$('list').innerHTML='<div class="empty">Sổ chưa có ai.<br>Nếu có <b>link sổ</b> được gửi qua Zalo, hãy chép link đó dán vào ô dưới rồi bấm <b>Nhập sổ</b>.<textarea id="emptyTxt" rows="3" style="margin-top:12px" placeholder="Dán link sổ vào đây"></textarea><button class="btn ok" id="emptyBtn" style="margin-top:10px">Nhập sổ</button><p class="hint">Hoặc bấm "Thêm người vay mới" bên dưới để tự nhập.</p></div>';return}
   $('list').innerHTML=ps.map(({p,s})=>`<div class="card ${s.c}"><div class="info" data-open="${esc(p.id)}"><div class="name">${esc(p.name)}</div><div class="meta">${money(p.amount)}/tuần · đã thu ${p.paid.length}/${p.weeks} tuần</div><span class="st">${esc(s.t)}</span></div><button class="plus" data-pay="${esc(p.id)}" aria-label="Thu tiền ${esc(p.name)}" ${s.c==='d'?'disabled':''}>+</button></div>`).join('')||'<div class="empty">Không tìm thấy tên này.</div>';
 }
 
@@ -298,8 +298,10 @@ $('list').addEventListener('click',e=>{
 $('addBtn').addEventListener('click',()=>form(null));
 $('q').addEventListener('input',render);
 $('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(JSON.stringify(state));$('copyBtn').textContent='Đã chép ✓'}catch(e){$('restoreTxt').value=JSON.stringify(state);$('copyBtn').textContent='Không chép được — dữ liệu đã hiện ở ô dưới, hãy tự chép'}});
+async function parseIn(t){t=String(t).trim();const m=t.match(/#d=([\w-]+)/);const d=m?await decodeShare(m[1]):JSON.parse(t);if(!d||!Array.isArray(d.people))throw 0;return d}
+$('list').addEventListener('click',async e=>{if(e.target.id!=='emptyBtn')return;let d;try{d=await parseIn($('emptyTxt').value)}catch(x){$('emptyTxt').value='';$('emptyTxt').placeholder='Link không đúng, hãy chép lại cho đủ';return}state={people:clean(d).people};save()});
 $('restoreBtn').addEventListener('click',async()=>{
-  let d;try{d=JSON.parse($('restoreTxt').value);if(!Array.isArray(d.people))throw 0}catch(e){$('restoreTxt').value='';$('restoreTxt').placeholder='Dữ liệu dán vào không đúng';return}
+  let d;try{d=await parseIn($('restoreTxt').value)}catch(e){$('restoreTxt').value='';$('restoreTxt').placeholder='Dữ liệu dán vào không đúng';return}
   if(await ask('Khôi phục?',`<p>Sổ hiện tại sẽ được thay bằng bản sao lưu có <b>${d.people.length}</b> người.</p>`,'ĐÚNG, KHÔI PHỤC','warn')){state={people:d.people};save()}
 });
 setInterval(render,60000);
