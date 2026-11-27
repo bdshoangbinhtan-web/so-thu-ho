@@ -91,6 +91,7 @@ label{display:block;font-weight:700;margin:14px 0 6px}
   <details class="backup">
     <summary>Sao lưu dữ liệu</summary>
     <p class="hint">Bấm "Chép dữ liệu" rồi dán vào Zalo hoặc ghi chú để cất giữ. Khi cần, dán lại vào ô dưới và bấm "Khôi phục".</p>
+    <button class="btn" id="shareBtn" style="margin-bottom:10px">Tạo link gửi sổ sang máy khác</button>
     <button class="btn" id="copyBtn">Chép dữ liệu</button>
     <textarea id="restoreTxt" rows="3" style="margin-top:10px" placeholder="Dán dữ liệu sao lưu vào đây"></textarea>
     <button class="btn" id="restoreBtn" style="margin-top:10px">Khôi phục</button>
@@ -322,6 +323,24 @@ const clean=d=>d&&Array.isArray(d.people)?{people:d.people.map(p=>({...p,paid:Ar
     else setSync(true);
     if(!snap.metadata.fromCache)firstSnap=false;
   },()=>{clearTimeout(timer);ref=null;setSync(true)});
+})();
+
+/* ---- gửi sổ qua link ---- */
+const b64u=b=>{let s='';for(const x of b)s+=String.fromCharCode(x);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
+const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+async function encodeShare(o){const st=new Blob([JSON.stringify(o)]).stream().pipeThrough(new CompressionStream('gzip'));return b64u(new Uint8Array(await new Response(st).arrayBuffer()))}
+async function decodeShare(s){const st=new Blob([unb64u(s)]).stream().pipeThrough(new DecompressionStream('gzip'));return JSON.parse(await new Response(st).text())}
+$('shareBtn').addEventListener('click',async()=>{
+  try{const link=location.origin+location.pathname+'#d='+await encodeShare({people:state.people});$('restoreTxt').value=link;
+    try{await navigator.clipboard.writeText(link);$('shareBtn').textContent='Đã chép link ✓ — dán vào Zalo gửi đi'}catch(e){$('shareBtn').textContent='Link đã hiện ở ô dưới, hãy tự chép'}}
+  catch(e){$('shareBtn').textContent='Máy này không tạo được link'}
+});
+(async()=>{
+  const m=location.hash.match(/^#d=([\w-]+)$/);if(!m)return;
+  try{history.replaceState(null,'',location.pathname)}catch(e){}
+  let d;try{d=clean(await decodeShare(m[1]))}catch(e){d=null}
+  if(!d){ask('Link bị lỗi','<p>Không đọc được sổ trong link này. Nhờ người gửi gửi lại.</p>','ĐÃ HIỂU');return}
+  if(!state.people.length||await ask('Nhập sổ mới?',`<p>Link có sổ gồm <b>${d.people.length}</b> người.</p><p>Sổ đang có trên máy này (${state.people.length} người) sẽ được thay bằng sổ mới.</p>`,'ĐÚNG, NHẬP','warn')){state={people:d.people};save()}
 })();
 }
 </script>
